@@ -108,25 +108,9 @@ type Response struct {
 }
 
 func (c *Client) doRequest(ctx context.Context, method, path string, query map[string]string, opts ...RequestOption) (*Response, error) {
-	url := c.buildURL(path, query)
+	requestURL := c.buildURL(path, query)
 
-	var body []byte
-	for _, opt := range opts {
-		if r, ok := opt.(*requestWithBody); ok {
-			body = r.body
-			break
-		}
-	}
-
-	reqLog := &utils.RequestLog{
-		Method:  method,
-		URL:     url,
-		Headers: make(map[string]string),
-		Body:    string(body),
-		Time:    time.Now(),
-	}
-
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	req, err := http.NewRequestWithContext(ctx, method, requestURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -135,10 +119,17 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query map[s
 		opt(req)
 	}
 
+	headers := make(map[string]string)
 	for k := range req.Header {
-		reqLog.Headers[k] = req.Header.Get(k)
+		headers[k] = req.Header.Get(k)
 	}
 
+	reqLog := &utils.RequestLog{
+		Method:  method,
+		URL:     requestURL,
+		Headers: headers,
+		Time:    time.Now(),
+	}
 	utils.LogRequest(reqLog)
 
 	var lastErr error
@@ -163,14 +154,19 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query map[s
 			return nil, fmt.Errorf("failed to read response body: %w", err)
 		}
 
+		respHeaders := make(map[string]string)
+		for k := range resp.Header {
+			respHeaders[k] = resp.Header.Get(k)
+		}
+
 		respLog := &utils.ResponseLog{
 			StatusCode: resp.StatusCode,
-			Headers:    resp.Header,
+			Headers:    respHeaders,
 			Body:       string(respBody),
 			Duration:   time.Since(start),
 		}
 
-		utils.LogResponse(respLog, url)
+		utils.LogResponse(respLog, requestURL)
 
 		if resp.StatusCode >= 400 && attempt < c.config.MaxRetries && c.config.RetryCondition(resp, nil) {
 			utils.Warn("Got %d (attempt %d/%d)", resp.StatusCode, attempt+1, c.config.MaxRetries)
@@ -183,29 +179,11 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query map[s
 			Headers:    resp.Header,
 			Body:       respBody,
 			Duration:   time.Since(start),
-			RequestURL: url,
+			RequestURL: requestURL,
 		}, nil
 	}
 
 	return nil, lastErr
-}
-
-type requestWithBody struct {
-	body []byte
-}
-
-func (r *requestWithBody) Apply(req *http.Request) {
-	req.Body = io.NopCloser(bytes.NewReader(r.body))
-}
-
-func WithRequestBody(body interface{}) RequestOption {
-	var buf bytes.Buffer
-	if s, ok := body.(string); ok {
-		buf.WriteString(s)
-	} else {
-		json.NewEncoder(&buf).Encode(body)
-	}
-	return &requestWithBody{body: buf.Bytes()}
 }
 
 func (c *Client) Get(ctx context.Context, path string, query map[string]string, opts ...RequestOption) (*Response, error) {
@@ -213,15 +191,15 @@ func (c *Client) Get(ctx context.Context, path string, query map[string]string, 
 }
 
 func (c *Client) Post(ctx context.Context, path string, body interface{}, opts ...RequestOption) (*Response, error) {
-	return c.doRequest(ctx, http.MethodPost, path, nil, append(opts, WithRequestBody(body))...)
+	return c.doRequest(ctx, http.MethodPost, path, nil, append(opts, WithBody(body))...)
 }
 
 func (c *Client) Put(ctx context.Context, path string, body interface{}, opts ...RequestOption) (*Response, error) {
-	return c.doRequest(ctx, http.MethodPut, path, nil, append(opts, WithRequestBody(body))...)
+	return c.doRequest(ctx, http.MethodPut, path, nil, append(opts, WithBody(body))...)
 }
 
 func (c *Client) Patch(ctx context.Context, path string, body interface{}, opts ...RequestOption) (*Response, error) {
-	return c.doRequest(ctx, http.MethodPatch, path, nil, append(opts, WithRequestBody(body))...)
+	return c.doRequest(ctx, http.MethodPatch, path, nil, append(opts, WithBody(body))...)
 }
 
 func (c *Client) Delete(ctx context.Context, path string, opts ...RequestOption) (*Response, error) {
