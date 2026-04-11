@@ -26,9 +26,9 @@ git clone https://github.com/ssrjkk/guap-test-framework-go.git
 cd guap-test-framework-go
 
 # Запустить тесты
-go test ./tests/smoke/...    # Smoke тесты
-go test ./tests/regression/... # Regression тесты
-go test ./tests/critical/...  # Critical + Negative тесты
+go test ./tests/smoke/...        # Smoke тесты
+go test ./tests/regression/...   # Regression тесты
+go test ./tests/critical/...     # Critical + Negative тесты
 
 # Параллельно
 go test -parallel 4 ./tests/...
@@ -135,7 +135,7 @@ func (s *StudentService) GetAll(ctx context.Context, token string) ([]Student, e
 | Go 1.21+ | Язык с встроенным testing framework |
 | go testing | Оркестрация, фикстуры, параллельность |
 | Docker | Multi-stage build, воспроизводимое окружение |
-| GitHub Actions | CI/CD: lint → tests → report |
+| GitHub Actions | CI/CD: lint -> tests -> report |
 | Retry + Backoff | Обработка нестабильных endpoint'ов |
 | Schema validation | Контрактное тестирование |
 
