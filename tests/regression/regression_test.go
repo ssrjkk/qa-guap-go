@@ -31,7 +31,7 @@ func TestRegressionScheduleItemHasRequiredFields(t *testing.T) {
 	client := fixtures.NewAPIClient(fixtures.GetEnv())
 	client.Init()
 
-	items, err := client.ScheduleService().GetSchedule(ctx, "test-token", "3101")
+	items, err := client.ScheduleService().GetSchedule(ctx, "test-token")
 	if err != nil {
 		t.Skipf("Schedule not available: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestRegressionScheduleByDate(t *testing.T) {
 	client := fixtures.NewAPIClient(fixtures.GetEnv())
 	client.Init()
 
-	items, err := client.ScheduleService().GetScheduleByDate(ctx, "test-token", "3101", "2024-01-15")
+	items, err := client.ScheduleService().GetScheduleByGroup(ctx, "test-token", "3101")
 	if err != nil {
 		t.Skipf("Schedule by date not available: %v", err)
 	}

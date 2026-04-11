@@ -11,7 +11,6 @@ import (
 
 	"go-framework-guap/config"
 	"go-framework-guap/core/errors"
-	"go-framework-guap/fixtures"
 )
 
 var (
