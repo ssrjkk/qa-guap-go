@@ -33,6 +33,7 @@ jobs:
 
       - name: Check gofmt
         run: |
+          find . -name '*.go' -type f -exec sed -i 's/\r$//' {} +
           if [ -n "$(gofmt -l .)" ]; then
             echo "gofmt found issues:"
             gofmt -l .
