@@ -160,7 +160,7 @@ func TestRegressionSubjectGrades(t *testing.T) {
 	client := fixtures.NewAPIClient(fixtures.GetEnv())
 	client.Init()
 
-	grades, err := client.GradesService().GetSubjectGrades(ctx, "test-token", "12345", "s001")
+	grades, err := client.GradesService().GetByStudent(ctx, "test-token", "12345")
 	if err != nil {
 		t.Skipf("Subject grades not available: %v", err)
 	}
