@@ -1,15 +1,116 @@
-# GO Framework GUAP.RU
+# QA Automation Framework (Go)
 
-> Go | API Testing | CI/CD | guap.ru
+Portfolio Project
 
-## Статус
+Фреймворк для автоматизации тестирования API веб-приложения guap.ru.
+Демонстрирует навыки: API-автоматизация, CI/CD, контейнеризация, многоуровневое тестирование.
 
-![CI](https://github.com/ssrjkk/go-framework-guap/actions/workflows/ci.yml/badge.svg)
-![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)
+## Зачем этот проект
 
-## Обзор
+Автоматизирует проверку ключевых сценариев образовательного портала ГУАП:
 
-Фреймворк для автоматизированного тестирования API портала [guap.ru](https://guap.ru) — системы Санкт-Петербургского государственного университета аэрокосмического приборостроения.
+| Сценарий | Тип теста | Зачем |
+|----------|-----------|-------|
+| Проверка статуса | Smoke | Быстрая проверка доступности API |
+| Получение списка студентов | Smoke + Regression | Валидация списочных endpoint'ов |
+| Расписание группы | Critical + Regression | Проверка фильтрации по параметрам |
+| Оценки студента | Regression | Валидация связанных данных |
+| Авторизация | Critical | Проверка security |
+| Ошибки 4xx/5xx | Negative | Контрактное тестирование |
+
+## Быстрый старт
+
+```bash
+# Клонировать
+git clone https://github.com/ssrjkk/guap-test-framework-go.git
+cd guap-test-framework-go
+
+# Запустить тесты
+go test ./tests/smoke/...    # Smoke тесты
+go test ./tests/regression/... # Regression тесты
+go test ./tests/critical/...  # Critical + Negative тесты
+
+# Параллельно
+go test -parallel 4 ./tests/...
+
+# Docker
+docker build -f docker/Dockerfile -t qa-tests .
+docker run --rm qa-tests
+```
+
+## Архитектура
+
+```
+.
+├── core/                   # Базовый слой
+│   ├── base/              # HTTP-клиент: retry, логирование, валидация
+│   │   ├── client.go      # BaseClient с retry и timeout
+│   │   └── validator.go   # Schema validation (required, email, min/max)
+│   ├── errors/            # Кастомные ошибки
+│   │   └── errors.go     # APIError, ValidationError, RetryableError
+│   └── utils/             # Логирование
+│       └── logger.go      # Request/Response логирование
+├── services/api/          # API сервисы
+│   └── services.go         # HealthService, AuthService, StudentService,
+│                          # ScheduleService, SubjectService, GradesService
+├── fixtures/               # Фикстуры с DI
+│   └── api.go             # APIClient, AuthFixture, ScheduleFixture
+├── config/                # Конфигурация
+│   └── config.go          # dev/stage окружения из .env
+├── tests/                 # Тесты
+│   ├── smoke/            # Smoke тесты (< 1 мин)
+│   ├── regression/        # Regression тесты (< 5 мин)
+│   ├── critical/         # Critical + Negative тесты (< 3 мин)
+│   └── tests.go          # Утилиты: метрики, retry, waiters
+└── docker/               # Контейнеризация
+    ├── Dockerfile         # Production image
+    └── Dockerfile.test    # Test image для CI
+```
+
+## Пример теста
+
+```go
+// tests/regression/students_test.go
+func TestRegressionStudentHasRequiredFields(t *testing.T) {
+    client := fixtures.NewAPIClient(fixtures.GetEnv())
+    client.Init()
+
+    students, err := client.StudentService().GetAll(ctx, token)
+    if err != nil {
+        t.Skipf("Students not available: %v", err)
+    }
+
+    for _, student := range students {
+        if student.ID == "" {
+            t.Error("Student has no ID")
+        }
+        if student.Name == "" {
+            t.Errorf("Student %s has no name", student.ID)
+        }
+    }
+}
+```
+
+```go
+// services/api/services.go
+type StudentService struct {
+    client *base.Client
+}
+
+func (s *StudentService) GetAll(ctx context.Context, token string) ([]Student, error) {
+    resp, err := s.client.Get(ctx, "/api/students", nil,
+        base.WithHeaders(map[string]string{"Authorization": "Bearer " + token}))
+    if err != nil {
+        return nil, err
+    }
+
+    var students []Student
+    if err := s.client.DecodeJSON(resp, &students); err != nil {
+        return nil, err
+    }
+    return students, nil
+}
+```
 
 ## Тестируемые эндпоинты
 
@@ -27,83 +128,69 @@
 | POST | `/api/auth/login` | Авторизация |
 | POST | `/api/auth/refresh` | Refresh token |
 
-## Архитектура
+## Стек
 
-```
-.
-├── core/               # Базовый слой
-│   ├── base/          # HTTP клиент с retry, валидатор
-│   ├── errors/        # APIError, ValidationError, RetryableError
-│   └── utils/         # Request/Response логирование
-├── services/api/      # HealthService, AuthService, StudentService, 
-│                       # ScheduleService, SubjectService, GradesService, ProfileService
-├── fixtures/          # APIClient, AuthFixture, ScheduleFixture (DI)
-├── config/            # dev/stage окружения
-├── tests/             # smoke, regression, critical
-└── docker/            # Multi-stage build
-```
+| Технология | Зачем |
+|-----------|-------|
+| Go 1.21+ | Язык с встроенным testing framework |
+| go testing | Оркестрация, фикстуры, параллельность |
+| Docker | Multi-stage build, воспроизводимое окружение |
+| GitHub Actions | CI/CD: lint → tests → report |
+| Retry + Backoff | Обработка нестабильных endpoint'ов |
+| Schema validation | Контрактное тестирование |
 
 ## Уровни тестов
 
-| Уровень | Описание | Время |
-|---------|----------|-------|
-| **Smoke** | Базовая доступность эндпоинтов | < 1 мин |
-| **Critical** | Авторизация, получение данных | < 3 мин |
-| **Regression** | Полное функциональное покрытие | < 5 мин |
-| **Nightly** | Полный набор + race detection | Ежедневно |
+```bash
+# Smoke — < 1 мин
+go test -v -timeout 2m -run "^TestSmoke" ./tests/smoke/...
 
-## Фичи
+# Regression — < 5 мин
+go test -v -timeout 5m -run "^TestRegression" ./tests/regression/...
 
-- **Retry logic**: Exponential backoff на 5xx/429
-- **Логирование**: Request/Response с headers и body
-- **Schema validation**: Required, email, min/max length
-- **Fixtures**: DI без `new` в тестах
-- **Fail-fast**: false (все параллельные jobs завершаются)
-- **Docker**: Multi-stage ~15MB
+# Critical + Negative — < 3 мин
+go test -v -timeout 5m -run "^(TestCritical|TestNegative)" ./tests/critical/...
 
-## Запуск
+# Nightly — все тесты + race detection
+go test -v -race -count=1 -timeout 10m ./tests/...
+```
+
+## CI/CD
+
+GitHub Actions автоматически запускает:
+
+```
+lint ──→ test (smoke) ──┐
+                       ├─→ test (regression) ──┤
+                       └─→ test (critical) ─────┴──→ nightly (cron)
+```
+
+- **lint**: go vet, gofmt, staticcheck
+- **test**: параллельное выполнение по уровням
+- **nightly**: полный набор + race detection (cron: 2:00)
+
+## Запуск в Docker
 
 ```bash
-# Все тесты
-go test ./tests/...
+# Production image (~15MB)
+docker build -f docker/Dockerfile -t qa-tests .
+docker run --rm qa-tests
 
-# Smoke
-go test -v -run "^TestSmoke" ./tests/smoke/...
-
-# Regression
-go test -v -run "^TestRegression" ./tests/regression/...
-
-# Critical + Negative
-go test -v -run "^(TestCritical|TestNegative)" ./tests/critical/...
-
-# Параллельно
-go test -parallel 4 ./tests/...
-```
-
-## CI/CD Pipeline
-
-```
-lint → test (smoke) ─┐
-                    ├→ test (regression) ─┤
-                    └→ test (critical) ────┴→ nightly (cron)
-```
-
-## Docker
-
-```bash
-docker build -f docker/Dockerfile -t go-framework-guap .
-docker run go-framework-guap
+# Test image для CI
+docker build -f docker/Dockerfile.test -t qa-tests-runner .
+docker run --rm qa-tests-runner go test -v ./tests/...
 ```
 
 ## Конфигурация
 
 | Переменная | Описание | По умолчанию |
-|------------|----------|--------------|
-| `API_BASE_URL` | Base URL | guap.ru |
+|-----------|---------|--------------|
+| `API_BASE_URL` | Base URL API | guap.ru |
 | `API_TIMEOUT` | Таймаут (сек) | 30 |
 | `API_MAX_RETRIES` | Retry попыток | 3 |
+| `TEST_ENV` | Окружение (dev/stage) | dev |
 
 ## Контакты
 
-- Telegram: @ssrjkk
-- Email: ray013lefe@gmail.com
+Telegram: @ssrjkk
+Email: ray013lefe@gmail.com
