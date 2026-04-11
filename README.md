@@ -160,9 +160,11 @@ go test -v -race -count=1 -timeout 10m ./tests/...
 GitHub Actions автоматически запускает:
 
 ```
-lint ──→ test (smoke) ──┐
-                       ├─→ test (regression) ──┤
-                       └─→ test (critical) ─────┴──→ nightly (cron)
+lint -|-> test (smoke) -|-> test (regression) -|-> report
+                        |
+                        |-> test (critical) -|-> report
+                        |
+                        |-> nightly (cron, 02:00 UTC)
 ```
 
 - **lint**: go vet, gofmt, staticcheck
