@@ -1,4 +1,4 @@
-# QA Automation Framework (Go)
+# Guap.ru Framework (Go)
 
 Portfolio Project
 
@@ -43,28 +43,28 @@ docker run --rm qa-tests
 ```
 .
 ├── core/                   # Базовый слой
-│   ├── base/              # HTTP-клиент: retry, логирование, валидация
-│   │   ├── client.go      # BaseClient с retry и timeout
-│   │   └── validator.go   # Schema validation (required, email, min/max)
-│   ├── errors/            # Кастомные ошибки
-│   │   └── errors.go     # APIError, ValidationError, RetryableError
-│   └── utils/             # Логирование
-│       └── logger.go      # Request/Response логирование
-├── services/api/          # API сервисы
+│   ├── base/               # HTTP-клиент: retry, логирование, валидация
+│   │   ├── client.go       # BaseClient с retry и timeout
+│   │   └── validator.go    # Schema validation (required, email, min/max)
+│   ├── errors/             # Кастомные ошибки
+│   │   └── errors.go       # APIError, ValidationError, RetryableError
+│   └── utils/              # Логирование
+│       └── logger.go       # Request/Response логирование
+├── services/api/           # API сервисы
 │   └── services.go         # HealthService, AuthService, StudentService,
-│                          # ScheduleService, SubjectService, GradesService
+│                           # ScheduleService, SubjectService, GradesService
 ├── fixtures/               # Фикстуры с DI
-│   └── api.go             # APIClient, AuthFixture, ScheduleFixture
-├── config/                # Конфигурация
-│   └── config.go          # dev/stage окружения из .env
-├── tests/                 # Тесты
-│   ├── smoke/            # Smoke тесты (< 1 мин)
-│   ├── regression/        # Regression тесты (< 5 мин)
-│   ├── critical/         # Critical + Negative тесты (< 3 мин)
-│   └── tests.go          # Утилиты: метрики, retry, waiters
-└── docker/               # Контейнеризация
-    ├── Dockerfile         # Production image
-    └── Dockerfile.test    # Test image для CI
+│   └── api.go              # APIClient, AuthFixture, ScheduleFixture
+├── config/                 # Конфигурация
+│   └── config.go           # dev/stage окружения из .env
+├── tests/                  # Тесты
+│   ├── smoke/              # Smoke тесты (< 1 мин)
+│   ├── regression/         # Regression тесты (< 5 мин)
+│   ├── critical/           # Critical + Negative тесты (< 3 мин)
+│   └── tests.go            # Утилиты: метрики, retry, waiters
+└── docker/                 # Контейнеризация
+    ├── Dockerfile          # Production image
+    └── Dockerfile.test     # Test image для CI
 ```
 
 ## Пример теста
