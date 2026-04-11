@@ -91,7 +91,7 @@ func TestRegressionGradesHasRequiredFields(t *testing.T) {
 	client := fixtures.NewAPIClient(fixtures.GetEnv())
 	client.Init()
 
-	grades, err := client.GradesService().GetGrades(ctx, "test-token", "12345")
+	grades, err := client.GradesService().GetByStudent(ctx, "test-token", "12345")
 	if err != nil {
 		t.Skipf("Grades not available: %v", err)
 	}
