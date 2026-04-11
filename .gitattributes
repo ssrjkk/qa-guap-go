@@ -1,0 +1,8 @@
+*.go text=lf
+*.yml text=lf
+*.yaml text=lf
+*.md text=lf
+*.mod text=lf
+*.sum text=lf
+Dockerfile text=lf
+*.sql text=lf
