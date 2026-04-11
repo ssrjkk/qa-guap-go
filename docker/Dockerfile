@@ -1,6 +1,6 @@
 FROM golang:1.21-alpine AS builder
 
-WORKDIR /app
+WORKDIR /build
 
 RUN apk add --no-cache git
 
@@ -9,14 +9,16 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /qa-tests ./tests/...
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/qa-tests ./tests/...
 
 FROM alpine:3.19
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates curl
 
 WORKDIR /app
 
-COPY --from=builder /qa-tests .
+COPY --from=builder /app/qa-tests .
 
-CMD ["./qa-tests", "-test.v", "-test.parallel=4"]
+RUN chmod +x /app/qa-tests
+
+CMD ["/app/qa-tests"]
