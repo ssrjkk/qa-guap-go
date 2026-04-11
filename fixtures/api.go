@@ -13,8 +13,11 @@ import (
 
 type APIClient struct {
 	client      *base.Client
+	healthSvc   *api.HealthService
 	authSvc     *api.AuthService
+	studentSvc  *api.StudentService
 	scheduleSvc *api.ScheduleService
+	subjectSvc  *api.SubjectService
 	gradesSvc   *api.GradesService
 	profileSvc  *api.ProfileService
 	baseURL     string
@@ -45,8 +48,11 @@ func (ac *APIClient) Init() error {
 			RetryDelay: 500 * time.Millisecond,
 		}
 		ac.client = base.NewClient(cfg)
+		ac.healthSvc = api.NewHealthService(ac.client)
 		ac.authSvc = api.NewAuthService(ac.client)
+		ac.studentSvc = api.NewStudentService(ac.client)
 		ac.scheduleSvc = api.NewScheduleService(ac.client)
+		ac.subjectSvc = api.NewSubjectService(ac.client)
 		ac.gradesSvc = api.NewGradesService(ac.client)
 		ac.profileSvc = api.NewProfileService(ac.client)
 	})
@@ -60,6 +66,13 @@ func (ac *APIClient) Client() *base.Client {
 	return ac.client
 }
 
+func (ac *APIClient) HealthService() *api.HealthService {
+	if ac.healthSvc == nil {
+		ac.Init()
+	}
+	return ac.healthSvc
+}
+
 func (ac *APIClient) AuthService() *api.AuthService {
 	if ac.authSvc == nil {
 		ac.Init()
@@ -67,11 +80,25 @@ func (ac *APIClient) AuthService() *api.AuthService {
 	return ac.authSvc
 }
 
+func (ac *APIClient) StudentService() *api.StudentService {
+	if ac.studentSvc == nil {
+		ac.Init()
+	}
+	return ac.studentSvc
+}
+
 func (ac *APIClient) ScheduleService() *api.ScheduleService {
 	if ac.scheduleSvc == nil {
 		ac.Init()
 	}
 	return ac.scheduleSvc
+}
+
+func (ac *APIClient) SubjectService() *api.SubjectService {
+	if ac.subjectSvc == nil {
+		ac.Init()
+	}
+	return ac.subjectSvc
 }
 
 func (ac *APIClient) GradesService() *api.GradesService {
@@ -159,7 +186,7 @@ func (f *AuthFixture) GetToken() string {
 type ScheduleFixture struct {
 	client   *APIClient
 	token    string
-	groupID  string
+	group    string
 	schedule []api.ScheduleItem
 }
 
@@ -167,12 +194,18 @@ func NewScheduleFixture(client *APIClient) *ScheduleFixture {
 	return &ScheduleFixture{client: client}
 }
 
-func (f *ScheduleFixture) Setup(ctx context.Context, token, groupID string) ([]api.ScheduleItem, error) {
+func (f *ScheduleFixture) Setup(ctx context.Context, token, group string) ([]api.ScheduleItem, error) {
 	f.client.Init()
 	f.token = token
-	f.groupID = groupID
+	f.group = group
 
-	schedule, err := f.client.ScheduleService().GetSchedule(ctx, token, groupID)
+	var schedule []api.ScheduleItem
+	var err error
+	if group != "" {
+		schedule, err = f.client.ScheduleService().GetScheduleByGroup(ctx, token, group)
+	} else {
+		schedule, err = f.client.ScheduleService().GetSchedule(ctx, token)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +243,13 @@ func (f *GradesFixture) Setup(ctx context.Context, token, studentID string) ([]a
 	f.token = token
 	f.studentID = studentID
 
-	grades, err := f.client.GradesService().GetGrades(ctx, token, studentID)
+	var grades []api.Grade
+	var err error
+	if studentID != "" {
+		grades, err = f.client.GradesService().GetByStudent(ctx, token, studentID)
+	} else {
+		grades, err = f.client.GradesService().GetAll(ctx, token)
+	}
 	if err != nil {
 		return nil, err
 	}

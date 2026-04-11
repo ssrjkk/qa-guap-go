@@ -11,12 +11,21 @@
 
 Фреймворк для автоматизированного тестирования API портала [guap.ru](https://guap.ru) — системы Санкт-Петербургского государственного университета аэрокосмического приборостроения.
 
-Тестируемые модули:
-- `/api/auth` — авторизация, refresh token
-- `/api/profile` — профиль студента
-- `/api/schedule` — расписание занятий
-- `/api/teachers` — преподаватели
-- `/api/students/*/grades` — оценки студентов
+## Тестируемые эндпоинты
+
+| Метод | Эндпоинт | Описание |
+|-------|----------|----------|
+| GET | `/api/health` | Проверка статуса |
+| GET | `/api/students` | Список студентов |
+| GET | `/api/students/:id` | Студент по ID |
+| GET | `/api/schedule` | Расписание |
+| GET | `/api/schedule?group=Z3420` | Расписание группы |
+| GET | `/api/subjects` | Список предметов |
+| GET | `/api/grades` | Все оценки |
+| GET | `/api/grades?student_id=1` | Оценки студента |
+| GET | `/api/teachers` | Преподаватели |
+| POST | `/api/auth/login` | Авторизация |
+| POST | `/api/auth/refresh` | Refresh token |
 
 ## Архитектура
 
@@ -26,22 +35,13 @@
 │   ├── base/          # HTTP клиент с retry, валидатор
 │   ├── errors/        # APIError, ValidationError, RetryableError
 │   └── utils/         # Request/Response логирование
-├── services/api/      # AuthService, ScheduleService, GradesService, ProfileService
+├── services/api/      # HealthService, AuthService, StudentService, 
+│                       # ScheduleService, SubjectService, GradesService, ProfileService
 ├── fixtures/          # APIClient, AuthFixture, ScheduleFixture (DI)
 ├── config/            # dev/stage окружения
 ├── tests/             # smoke, regression, critical
 └── docker/            # Multi-stage build
 ```
-
-## Тестируемые сценарии
-
-| Модуль | Методы | Тесты |
-|--------|--------|-------|
-| Auth | POST /api/auth/login, refresh, logout | Вход, выход, refresh token |
-| Profile | GET /api/profile, PATCH | Получение и обновление профиля |
-| Schedule | GET /api/schedule/{group} | Расписание группы, по дате |
-| Teachers | GET /api/teachers, /{id}/schedule | Список, расписание преподавателя |
-| Grades | GET /api/students/{id}/grades, /gpa | Оценки, средний балл |
 
 ## Уровни тестов
 

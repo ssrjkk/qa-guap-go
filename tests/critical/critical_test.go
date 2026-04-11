@@ -9,6 +9,21 @@ import (
 	"go-framework-guap/fixtures"
 )
 
+func TestCriticalHealthCheck(t *testing.T) {
+	ctx := context.Background()
+	client := fixtures.NewAPIClient(fixtures.GetEnv())
+	client.Init()
+
+	status, err := client.HealthService().Check(ctx)
+	if err != nil {
+		t.Skipf("Health not available: %v", err)
+	}
+
+	if status.Status == "" {
+		t.Error("Health status is empty")
+	}
+}
+
 func TestCriticalAuthLogin(t *testing.T) {
 	ctx := context.Background()
 	client := fixtures.NewAPIClient(fixtures.GetEnv())
@@ -39,6 +54,98 @@ func TestCriticalAuthRefresh(t *testing.T) {
 	}
 }
 
+func TestCriticalStudentsList(t *testing.T) {
+	ctx := context.Background()
+	client := fixtures.NewAPIClient(fixtures.GetEnv())
+	client.Init()
+
+	students, err := client.StudentService().GetAll(ctx, "test-token")
+	if err != nil {
+		t.Skipf("Students not available: %v", err)
+	}
+
+	if len(students) == 0 {
+		t.Error("Students list is empty")
+	}
+}
+
+func TestCriticalStudentByID(t *testing.T) {
+	ctx := context.Background()
+	client := fixtures.NewAPIClient(fixtures.GetEnv())
+	client.Init()
+
+	student, err := client.StudentService().GetByID(ctx, "test-token", "1")
+	if err != nil {
+		t.Skipf("Student by ID not available: %v", err)
+	}
+
+	if student.ID == "" {
+		t.Error("Student ID is empty")
+	}
+}
+
+func TestCriticalScheduleRetrieval(t *testing.T) {
+	ctx := context.Background()
+	client := fixtures.NewAPIClient(fixtures.GetEnv())
+	client.Init()
+
+	items, err := client.ScheduleService().GetSchedule(ctx, "test-token")
+	if err != nil {
+		t.Skipf("Schedule not available: %v", err)
+	}
+
+	if len(items) == 0 {
+		t.Error("Schedule is empty")
+	}
+}
+
+func TestCriticalScheduleByGroup(t *testing.T) {
+	ctx := context.Background()
+	client := fixtures.NewAPIClient(fixtures.GetEnv())
+	client.Init()
+
+	items, err := client.ScheduleService().GetScheduleByGroup(ctx, "test-token", "Z3420")
+	if err != nil {
+		t.Skipf("Schedule by group not available: %v", err)
+	}
+
+	if len(items) == 0 {
+		t.Error("Schedule for group Z3420 is empty")
+	}
+}
+
+func TestCriticalSubjectsList(t *testing.T) {
+	ctx := context.Background()
+	client := fixtures.NewAPIClient(fixtures.GetEnv())
+	client.Init()
+
+	subjects, err := client.SubjectService().GetAll(ctx, "test-token")
+	if err != nil {
+		t.Skipf("Subjects not available: %v", err)
+	}
+
+	if len(subjects) == 0 {
+		t.Error("Subjects list is empty")
+	}
+}
+
+func TestCriticalGradesRetrieval(t *testing.T) {
+	ctx := context.Background()
+	client := fixtures.NewAPIClient(fixtures.GetEnv())
+	client.Init()
+
+	grades, err := client.GradesService().GetByStudent(ctx, "test-token", "1")
+	if err != nil {
+		t.Skipf("Grades not available: %v", err)
+	}
+
+	for _, g := range grades {
+		if g.Value < 0 || g.Value > 5 {
+			t.Errorf("Grade value out of range: %f", g.Value)
+		}
+	}
+}
+
 func TestCriticalProfileRetrieval(t *testing.T) {
 	ctx := context.Background()
 	client := fixtures.NewAPIClient(fixtures.GetEnv())
@@ -51,38 +158,6 @@ func TestCriticalProfileRetrieval(t *testing.T) {
 
 	if profile.ID == "" {
 		t.Error("Profile ID is empty")
-	}
-}
-
-func TestCriticalScheduleRetrieval(t *testing.T) {
-	ctx := context.Background()
-	client := fixtures.NewAPIClient(fixtures.GetEnv())
-	client.Init()
-
-	items, err := client.ScheduleService().GetSchedule(ctx, "test-token", "3101")
-	if err != nil {
-		t.Skipf("Schedule not available: %v", err)
-	}
-
-	if len(items) == 0 {
-		t.Error("Schedule is empty")
-	}
-}
-
-func TestCriticalGradesRetrieval(t *testing.T) {
-	ctx := context.Background()
-	client := fixtures.NewAPIClient(fixtures.GetEnv())
-	client.Init()
-
-	grades, err := client.GradesService().GetGrades(ctx, "test-token", "12345")
-	if err != nil {
-		t.Skipf("Grades not available: %v", err)
-	}
-
-	for _, g := range grades {
-		if g.Value < 0 || g.Value > 5 {
-			t.Errorf("Grade value out of range: %f", g.Value)
-		}
 	}
 }
 
@@ -108,23 +183,12 @@ func TestNegativeUnauthorizedAccess(t *testing.T) {
 	}
 }
 
-func TestNegativeInvalidGroupID(t *testing.T) {
-	ctx := context.Background()
-	client := fixtures.NewAPIClient(fixtures.GetEnv())
-	client.Init()
-
-	items, err := client.ScheduleService().GetSchedule(ctx, "test-token", "invalid-group")
-	if err == nil && len(items) == 0 {
-		t.Log("Empty schedule returned for invalid group")
-	}
-}
-
 func TestNegativeInvalidStudentID(t *testing.T) {
 	ctx := context.Background()
 	client := fixtures.NewAPIClient(fixtures.GetEnv())
 	client.Init()
 
-	grades, err := client.GradesService().GetGrades(ctx, "test-token", "999999")
+	grades, err := client.GradesService().GetByStudent(ctx, "test-token", "999999")
 	if err == nil && len(grades) == 0 {
 		t.Log("Empty grades returned for invalid student")
 	}
@@ -152,7 +216,7 @@ func TestNegativeEmptyRequiredFields(t *testing.T) {
 	client := fixtures.NewAPIClient(fixtures.GetEnv())
 	client.Init()
 
-	items, err := client.ScheduleService().GetSchedule(ctx, "test-token", "3101")
+	items, err := client.ScheduleService().GetSchedule(ctx, "test-token")
 	if err != nil {
 		t.Skipf("Schedule not available: %v", err)
 	}

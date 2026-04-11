@@ -4,6 +4,27 @@ import (
 	"go-framework-guap/core/base"
 )
 
+type HealthService struct {
+	client *base.Client
+}
+
+func NewHealthService(client *base.Client) *HealthService {
+	return &HealthService{client: client}
+}
+
+func (s *HealthService) Check(ctx context.Context) (*HealthStatus, error) {
+	resp, err := s.client.Get(ctx, "/api/health", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var status HealthStatus
+	if err := s.client.DecodeJSON(resp, &status); err != nil {
+		return nil, err
+	}
+	return &status, nil
+}
+
 type AuthService struct {
 	client *base.Client
 }
@@ -49,6 +70,42 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*TokenR
 	return &result, nil
 }
 
+type StudentService struct {
+	client *base.Client
+}
+
+func NewStudentService(client *base.Client) *StudentService {
+	return &StudentService{client: client}
+}
+
+func (s *StudentService) GetAll(ctx context.Context, token string) ([]Student, error) {
+	resp, err := s.client.Get(ctx, "/api/students", nil,
+		base.WithHeaders(map[string]string{"Authorization": "Bearer " + token}))
+	if err != nil {
+		return nil, err
+	}
+
+	var students []Student
+	if err := s.client.DecodeJSON(resp, &students); err != nil {
+		return nil, err
+	}
+	return students, nil
+}
+
+func (s *StudentService) GetByID(ctx context.Context, token, id string) (*Student, error) {
+	resp, err := s.client.Get(ctx, "/api/students/"+id, nil,
+		base.WithHeaders(map[string]string{"Authorization": "Bearer " + token}))
+	if err != nil {
+		return nil, err
+	}
+
+	var student Student
+	if err := s.client.DecodeJSON(resp, &student); err != nil {
+		return nil, err
+	}
+	return &student, nil
+}
+
 type ScheduleService struct {
 	client *base.Client
 }
@@ -57,8 +114,8 @@ func NewScheduleService(client *base.Client) *ScheduleService {
 	return &ScheduleService{client: client}
 }
 
-func (s *ScheduleService) GetSchedule(ctx context.Context, token, groupID string) ([]ScheduleItem, error) {
-	resp, err := s.client.Get(ctx, "/api/schedule/"+groupID, nil,
+func (s *ScheduleService) GetSchedule(ctx context.Context, token string) ([]ScheduleItem, error) {
+	resp, err := s.client.Get(ctx, "/api/schedule", nil,
 		base.WithHeaders(map[string]string{"Authorization": "Bearer " + token}))
 	if err != nil {
 		return nil, err
@@ -71,8 +128,8 @@ func (s *ScheduleService) GetSchedule(ctx context.Context, token, groupID string
 	return items, nil
 }
 
-func (s *ScheduleService) GetScheduleByDate(ctx context.Context, token, groupID, date string) ([]ScheduleItem, error) {
-	resp, err := s.client.Get(ctx, "/api/schedule/"+groupID, map[string]string{"date": date},
+func (s *ScheduleService) GetScheduleByGroup(ctx context.Context, token, group string) ([]ScheduleItem, error) {
+	resp, err := s.client.Get(ctx, "/api/schedule", map[string]string{"group": group},
 		base.WithHeaders(map[string]string{"Authorization": "Bearer " + token}))
 	if err != nil {
 		return nil, err
@@ -113,6 +170,28 @@ func (s *ScheduleService) GetTeacherSchedule(ctx context.Context, token, teacher
 	return items, nil
 }
 
+type SubjectService struct {
+	client *base.Client
+}
+
+func NewSubjectService(client *base.Client) *SubjectService {
+	return &SubjectService{client: client}
+}
+
+func (s *SubjectService) GetAll(ctx context.Context, token string) ([]Subject, error) {
+	resp, err := s.client.Get(ctx, "/api/subjects", nil,
+		base.WithHeaders(map[string]string{"Authorization": "Bearer " + token}))
+	if err != nil {
+		return nil, err
+	}
+
+	var subjects []Subject
+	if err := s.client.DecodeJSON(resp, &subjects); err != nil {
+		return nil, err
+	}
+	return subjects, nil
+}
+
 type GradesService struct {
 	client *base.Client
 }
@@ -121,8 +200,8 @@ func NewGradesService(client *base.Client) *GradesService {
 	return &GradesService{client: client}
 }
 
-func (s *GradesService) GetGrades(ctx context.Context, token, studentID string) ([]Grade, error) {
-	resp, err := s.client.Get(ctx, "/api/students/"+studentID+"/grades", nil,
+func (s *GradesService) GetAll(ctx context.Context, token string) ([]Grade, error) {
+	resp, err := s.client.Get(ctx, "/api/grades", nil,
 		base.WithHeaders(map[string]string{"Authorization": "Bearer " + token}))
 	if err != nil {
 		return nil, err
@@ -135,8 +214,8 @@ func (s *GradesService) GetGrades(ctx context.Context, token, studentID string) 
 	return grades, nil
 }
 
-func (s *GradesService) GetSubjectGrades(ctx context.Context, token, studentID, subjectID string) ([]Grade, error) {
-	resp, err := s.client.Get(ctx, "/api/students/"+studentID+"/subjects/"+subjectID+"/grades", nil,
+func (s *GradesService) GetByStudent(ctx context.Context, token, studentID string) ([]Grade, error) {
+	resp, err := s.client.Get(ctx, "/api/grades", map[string]string{"student_id": studentID},
 		base.WithHeaders(map[string]string{"Authorization": "Bearer " + token}))
 	if err != nil {
 		return nil, err
@@ -199,6 +278,11 @@ func (s *ProfileService) UpdateProfile(ctx context.Context, token string, update
 	return &student, nil
 }
 
+type HealthStatus struct {
+	Status  string `json:"status"`
+	Version string `json:"version"`
+}
+
 type LoginResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -208,6 +292,14 @@ type LoginResponse struct {
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
+}
+
+type Student struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Group        string `json:"group"`
+	Course       int    `json:"course"`
 }
 
 type ScheduleItem struct {
@@ -223,14 +315,22 @@ type ScheduleItem struct {
 }
 
 type Teacher struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
 	Department string `json:"department"`
+}
+
+type Subject struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Semester int    `json:"semester"`
+	Hours    int    `json:"hours"`
 }
 
 type Grade struct {
 	ID        int     `json:"id"`
+	StudentID string  `json:"student_id"`
 	SubjectID string  `json:"subject_id"`
 	Subject   string  `json:"subject"`
 	Value     float64 `json:"value"`
@@ -242,14 +342,6 @@ type GPA struct {
 	Current float64 `json:"current"`
 	Total   float64 `json:"total"`
 	Credit  int     `json:"credits"`
-}
-
-type Student struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Email        string `json:"email"`
-	Group        string `json:"group"`
-	Course       int    `json:"course"`
 }
 
 type ProfileUpdate struct {
