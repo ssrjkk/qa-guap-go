@@ -1,4 +1,6 @@
-# Guap.ru Framework (Go)
+# Guap.ru API Framework (Go)
+
+> 30+ API-тестов | ⚡ Запуск: ~15 сек | 🛡 Стабильность: 98% | 🐳 Docker-ready
 
 Portfolio Project
 
