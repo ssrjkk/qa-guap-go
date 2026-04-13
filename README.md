@@ -1,5 +1,14 @@
 # Guap.ru API Framework (Go)
 
+![Go](https://img.shields.io/badge/Go-1.21+-blue?logo=go&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-30+-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-78%25-yellow)
+![Run](https://img.shields.io/badge/run-~15sec-blue)
+![Docker](https://img.shields.io/badge/Docker-ready-blue?logo=docker&logoColor=white)
+![CI](https://github.com/ssrjkk/guap-test-framework-go/actions/workflows/ci.yml/badge.svg)
+![Last Commit](https://img.shields.io/github/last-commit/ssrjkk/guap-test-framework-go)
+![License](https://img.shields.io/badge/license-MIT-yellow)
+
 > 30+ API-тестов | ⚡ Запуск: ~15 сек | 🛡 Стабильность: 98% | 🐳 Docker-ready
 
 Portfolio Project
