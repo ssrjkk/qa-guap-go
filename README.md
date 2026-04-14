@@ -205,5 +205,6 @@ docker run --rm qa-tests-runner go test -v ./tests/...
 
 ## Контакты
 
-Telegram: @ssrjkk
-Email: ray013lefe@gmail.com
+- Telegram: @ssrjkk
+- Email: ray013lefe@gmail.com
+- GitHub: https://github.com/ssrjkk
